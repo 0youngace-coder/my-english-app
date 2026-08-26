@@ -155,19 +155,24 @@ function speakNovel() {
         let novelPart = "";
         let nIndex = fullMarkdownText.indexOf('3.');
         
+        // 만약 '3.'을 찾지 못했다면 숫자 '3'이라도 찾아서 시도
+        if (nIndex === -1) {
+            nIndex = fullMarkdownText.indexOf('3');
+        }
+        
         if (nIndex !== -1) {
             novelPart = fullMarkdownText.substring(nIndex);
         } else {
-            // 만약 '3.'을 못 찾으면 텍스트의 후반부를 기본으로 지정
+            // 표식을 전혀 못 찾으면 텍스트 전체를 대상으로 추출 시도
             novelPart = fullMarkdownText;
         }
         
         let lines = extractEnglishLines(novelPart);
         let textToRead = lines.join('. ');
         
-        // 💡 텍스트가 없거나 너무 짧으면 음성 출력을 아예 실행하지 않고 종료 (안내 문구 읽힘 방지)
+        // 텍스트가 없으면 아예 실행하지 않음 (쓸데없는 음성 출력 방지)
         if (!textToRead || textToRead.trim().length < 2) {
-            return; 
+            return;
         }
         
         var utterance = new SpeechSynthesisUtterance(textToRead);
