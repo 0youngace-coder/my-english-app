@@ -182,18 +182,36 @@ if st.session_state.result_text:
     """
     components.html(tts_html, height=160)
 
-    # 📥 선택적 저장 버튼
-    if st.button("📥 이 노트를 파일로 저장하기"):
-        target_word = st.session_state.current_word
-        file_name = f"{target_word.lower()}_note.md"
-        file_path = os.path.join(SAVE_DIR, file_name)
-        
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(f"# 영단어 학습 노트: {target_word}\n\n")
-            f.write(st.session_state.result_text)
-            
-        st.success(f"💾 저장이 완료되었습니다!\n- 저장 폴더: `{SAVE_DIR}`\n- 파일명: `{file_name}`")
+# 1️⃣ [기존 코드 주석 처리] - 실행되지 않고 보관만 해둡니다 (나중에 쓰실 때 #만 지우면 다시 살아납니다)
+# target_word = st.session_state.current_word
+# file_name = f"{target_word.lower()}_note.md"
+# file_path = os.path.join(SAVE_DIR, file_name)
+#
+# with open(file_path, "w", encoding="utf-8") as f:
+#     f.write(f"# 영단어 학습 노트: {target_word}\n\n")
+#     f.write(st.session_state.result_text)
+#
+# st.success(f"💾 저장이 완료되었습니다!\n- 저장 폴더: `{SAVE_DIR}`\n- 파일명: `{file_name}`")
 
+
+# 2️⃣ [새로운 다운로드 버튼 코드] - 지금 바로 기기로 다운로드할 수 있게 실행되는 코드
+try:
+  target_word = st.session_state.current_word
+except:
+  target_word = "note"
+
+file_name = f"{target_word.lower()}_note.md"
+note_content = (
+    f"# 영단어 학습 노트: {target_word}\n\n"
+    + st.session_state.get("result_text", "")
+)
+
+st.download_button(
+    label="📥 이 노트를 기기에 다운로드하기",
+    data=note_content,
+    file_name=file_name,
+    mime="text/markdown",
+)
 # 사이드바에 저장된 노트 목록 보기
 st.sidebar.markdown("---")
 st.sidebar.subheader("📂 저장된 노트 보관함")
