@@ -148,11 +148,10 @@ if st.session_state.result_text:
         }}
     }}
 
-  function speakNovel() {
+function speakNovel() {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         
-        // 1. 소설 파트 텍스트 추출
         let novelPart = fullMarkdownText;
         let nIndex = fullMarkdownText.indexOf('3.');
         if (nIndex !== -1) {
@@ -161,42 +160,21 @@ if st.session_state.result_text:
             novelPart = fullMarkdownText.substring(Math.floor(fullMarkdownText.length * 0.5));
         }
         
-        // 2. 불필요한 기호 제거 및 정리
-        let cleanText = novelPart
-            .replace(/[#*`_]/g, '')
-            .replace(/[0-9]+\./g, '')
-            .replace(/\n+/g, ' ')
+        let textToRead = novelPart
+            .replace(/[#*`_~-]/g, ' ')
+            .replace(/[0-9]+\./g, ' ')
+            .replace(/\n/g, ' ')
             .trim();
             
-        if (!cleanText || cleanText.length < 5) {
-            cleanText = "No English novel passage found.";
+        if (!textToRead || textToRead.length < 5) {
+            textToRead = "No English novel passage found.";
         }
         
-        // 3. 문장 단위로 쪼개서 순차적으로 읽어주기 (데스크탑 잘림 현상 방지)
-        let sentences = cleanText.match(/[^.!?]+[.!?]+(\s|$)/g);
-        if (!sentences) {
-            sentences = [cleanText];
-        }
-        
-        let index = 0;
-        function speakNextSentence() {
-            if (index >= sentences.length) return;
-            
-            var utterance = new SpeechSynthesisUtterance(sentences[index].trim());
-            utterance.lang = 'en-US';
-            utterance.rate = 0.85;
-            utterance.pitch = 1.0;
-            
-            utterance.onend = function() {
-                index++;
-                speakNextSentence();
-            };
-            
-            window.speechSynthesis.speak(utterance);
-        }
-        
-        speakNextSentence();
-        
+        var utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.85;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
     } else {
         alert('이 브라우저는 음성 출력을 지원하지 않습니다.');
     }
