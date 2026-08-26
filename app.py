@@ -68,7 +68,7 @@ if st.session_state.result_text:
     raw_text = st.session_state.result_text.replace('`', '').replace('"', '\\"').replace("'", "\\'")
     
     # 🔊 음성 재생 버튼 생성 (모바일 잘림 방지를 위해 height를 넉넉하게 160으로 설정)
-    tts_html = f"""
+    tts_html = """
     <div style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
         <button onclick="speakDialogueToneShift()" style="background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold;">
             👥 대화문 입체 톤으로 듣기
