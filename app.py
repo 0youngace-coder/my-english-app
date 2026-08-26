@@ -157,11 +157,18 @@ function speakNovel() {
         
         if (nIndex !== -1) {
             novelPart = fullMarkdownText.substring(nIndex);
+        } else {
+            // 만약 '3.'을 못 찾으면 텍스트의 후반부를 기본으로 지정
+            novelPart = fullMarkdownText;
         }
         
         let lines = extractEnglishLines(novelPart);
         let textToRead = lines.join('. ');
-        if (!textToRead) textToRead = "No English novel passage found.";
+        
+        // 💡 텍스트가 없거나 너무 짧으면 음성 출력을 아예 실행하지 않고 종료 (안내 문구 읽힘 방지)
+        if (!textToRead || textToRead.trim().length < 2) {
+            return; 
+        }
         
         var utterance = new SpeechSynthesisUtterance(textToRead);
         utterance.lang = 'en-US';
