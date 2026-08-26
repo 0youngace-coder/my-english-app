@@ -156,19 +156,16 @@ if st.session_state.result_text:
         let nIndex = fullMarkdownText.indexOf('3.');
         if (nIndex !== -1) {
             novelPart = fullMarkdownText.substring(nIndex);
-        } else if (fullMarkdownText.length > 100) {
-            novelPart = fullMarkdownText.substring(Math.floor(fullMarkdownText.length * 0.6));
+        } else if (fullMarkdownText.length > 50) {
+            novelPart = fullMarkdownText.substring(Math.floor(fullMarkdownText.length * 0.5));
         }
         
-        let lines = extractEnglishLines(novelPart);
-        
-        if (lines.length < 2) {
-            let cleanedText = novelPart.replace(/[#*`_]/g, ' ').replace(/[0-9]+\./g, ' ');
-            lines = [cleanedText];
-        }
-        
-        let textToRead = lines.join('. ');
-        if (!textToRead || textToRead.trim().length < 5) {
+        let textToRead = novelPart
+            .replace(/[#*`_]/g, '')
+            .replace(/[0-9]+\./g, '')
+            .trim();
+            
+        if (!textToRead || textToRead.length < 5) {
             textToRead = "No English novel passage found.";
         }
         
