@@ -3,16 +3,17 @@ import streamlit as st
 import google.generativeai as genai
 import streamlit.components.v1 as components
 
-# 페이지 및 API 키 설정 (Secrets에서 키를 자동으로 가져옴)
+# 페이지 설정
 st.set_page_config(page_title="AI 영단어 학습 앱", page_icon="📚", layout="centered")
 
+# 🔒 [보안 유지] Streamlit Secrets를 통해 안전하게 API 키 로드
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
 except Exception as e:
-    st.error("API 키 설정이 필요합니다. Streamlit Secrets를 확인하세요.")
+    st.error("⚠️ API 키 설정이 필요합니다. Streamlit Cloud의 Secrets 설정에 GEMINI_API_KEY를 등록해 주세요.")
 
-# 바탕화면의 원드라이브 데스크탑 경로 안의 English_Notes 폴더 설정
+# 저장할 특정 폴더 지정 (바탕화면의 English_Notes 폴더)
 desktop_path = os.path.join(os.path.expanduser("~"), "OneDrive", "Documents", "Desktop")
 SAVE_DIR = os.path.join(desktop_path, "English_Notes")
 
@@ -20,7 +21,7 @@ SAVE_DIR = os.path.join(desktop_path, "English_Notes")
 if not os.path.exists(SAVE_DIR):
     os.makedirs(SAVE_DIR)
 
-st.title("📚 AI 영단어 학습 앱 (음성 출력 보완)")
+st.title("📚 AI 영단어 학습 앱 (스마트폰 최적화)")
 st.write("단어를 검색한 뒤, 대화문 또는 소설문 음성 버튼을 눌러 들어보세요.")
 
 # 사용자 입력
@@ -35,7 +36,7 @@ if "current_word" not in st.session_state:
 if st.button("생성하기") and word_input:
     with st.spinner("AI가 멋진 예문과 대화문을 작성 중입니다..."):
         try:
-            # Gemini 3.6 모델 적용 및 A, B 화자 고정 프롬프트 설정
+            # Gemini 3.6 모델 적용 및 대화 형식 유도 프롬프트
             model = genai.GenerativeModel(
                 model_name="gemini-3.6-flash",
                 system_instruction="""You are an expert English teacher and writer. 
@@ -66,7 +67,7 @@ if st.session_state.result_text:
     # 원문 전체 텍스트를 자바스크립트로 안전하게 전달하기 위한 처리
     raw_text = st.session_state.result_text.replace('`', '').replace('"', '\\"').replace("'", "\\'")
     
-    # 🔊 음성 재생 버튼 생성 (모바일 잘림 방지 height=160 적용)
+    # 🔊 음성 재생 버튼 생성 (모바일 잘림 방지를 위해 height를 넉넉하게 160으로 설정)
     tts_html = f"""
     <div style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
         <button onclick="speakDialogueToneShift()" style="background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold;">
@@ -141,6 +142,7 @@ if st.session_state.result_text:
             }}
 
             speakNextLine();
+
         }} else {{
             alert('이 브라우저는 음성 출력을 지원하지 않습니다.');
         }}
