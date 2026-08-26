@@ -152,23 +152,16 @@ function speakNovel() {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         
-        let novelPart = fullMarkdownText;
+        let novelPart = "";
         let nIndex = fullMarkdownText.indexOf('3.');
+        
         if (nIndex !== -1) {
             novelPart = fullMarkdownText.substring(nIndex);
-        } else if (fullMarkdownText.length > 50) {
-            novelPart = fullMarkdownText.substring(Math.floor(fullMarkdownText.length * 0.5));
         }
         
-        let textToRead = novelPart
-            .replace(/[#*`_~-]/g, ' ')
-            .replace(/[0-9]+\./g, ' ')
-            .replace(/\n/g, ' ')
-            .trim();
-            
-        if (!textToRead || textToRead.length < 5) {
-            textToRead = "No English novel passage found.";
-        }
+        let lines = extractEnglishLines(novelPart);
+        let textToRead = lines.join('. ');
+        if (!textToRead) textToRead = "No English novel passage found.";
         
         var utterance = new SpeechSynthesisUtterance(textToRead);
         utterance.lang = 'en-US';
