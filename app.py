@@ -227,3 +227,25 @@ if os.path.exists(SAVE_DIR):
                 content = f.read()
             st.sidebar.markdown("---")
             st.sidebar.markdown(content)
+if selected_file:
+          with open(
+              os.path.join(SAVE_DIR, selected_file), "r", encoding="utf-8"
+          ) as f:
+            content = f.read()
+          st.sidebar.markdown("---")
+          st.sidebar.markdown(content)
+
+          # 🖨️ [추가할 인쇄 버튼 코드]
+          print_html = f"""
+            <div style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto;">
+                <h3 style="color: #333;">📖 학습 노트: {selected_file}</h3>
+                <hr style="border: 1px solid #ddd; margin-bottom: 20px;">
+                <div style="white-space: pre-wrap; font-size: 16px; color: #111;">{content}</div>
+            </div>
+            <script>
+                window.print();
+            </script>
+            """
+
+          if st.sidebar.button("🖨️ 이 노트 프린트하기"):
+            components.html(print_html, height=400)
