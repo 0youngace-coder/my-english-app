@@ -148,29 +148,27 @@ if st.session_state.result_text:
         }}
     }}
 
-    function speakNovel() {
+  function speakNovel() {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         
         let novelPart = fullMarkdownText;
-        
-        // 💡 '3.' 또는 소설 파트 키워드를 정확히 찾아내도록 보완
         let nIndex = fullMarkdownText.indexOf('3.');
-        if (nIndex === -1) {
-            nIndex = fullMarkdownText.indexOf('3');
-        }
-        
         if (nIndex !== -1) {
             novelPart = fullMarkdownText.substring(nIndex);
-        } else if (fullMarkdownText.length > 200) {
-            // 만약 표식을 못 찾으면 텍스트의 후반부를 소설문으로 간주
-            novelPart = fullMarkdownText.substring(Math.floor(fullMarkdownText.length / 2));
+        } else if (fullMarkdownText.length > 100) {
+            novelPart = fullMarkdownText.substring(Math.floor(fullMarkdownText.length * 0.6));
         }
         
         let lines = extractEnglishLines(novelPart);
-        let textToRead = lines.join('. ');
         
-        if (!textToRead) {
+        if (lines.length < 2) {
+            let cleanedText = novelPart.replace(/[#*`_]/g, ' ').replace(/[0-9]+\./g, ' ');
+            lines = [cleanedText];
+        }
+        
+        let textToRead = lines.join('. ');
+        if (!textToRead || textToRead.trim().length < 5) {
             textToRead = "No English novel passage found.";
         }
         
