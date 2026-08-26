@@ -148,32 +148,42 @@ if st.session_state.result_text:
         }}
     }}
 
-    function speakNovel() {{
-        if ('speechSynthesis' in window) {{
-            window.speechSynthesis.cancel();
-            
-            let novelPart = "";
-            let nIndex = fullMarkdownText.indexOf('3.');
-            
-            if (nIndex !== -1) {{
-                novelPart = fullMarkdownText.substring(nIndex);
-            }}
-            
-            let lines = extractEnglishLines(novelPart);
-            let textToRead = lines.join('. ');
-            if (!textToRead) textToRead = "No English novel passage found.";
-
-            var utterance = new SpeechSynthesisUtterance(textToRead);
-            utterance.lang = 'en-US';
-            utterance.rate = 0.85;
-            utterance.pitch = 1.0; 
-            window.speechSynthesis.speak(utterance);
-        }} else {{
-            alert('이 브라우저는 음성 출력을 지원하지 않습니다.');
-        }}
-    }}
-
-    function stopSpeech() {{
+    function speakNovel() {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        
+        let novelPart = fullMarkdownText;
+        
+        // 💡 '3.' 또는 소설 파트 키워드를 정확히 찾아내도록 보완
+        let nIndex = fullMarkdownText.indexOf('3.');
+        if (nIndex === -1) {
+            nIndex = fullMarkdownText.indexOf('3');
+        }
+        
+        if (nIndex !== -1) {
+            novelPart = fullMarkdownText.substring(nIndex);
+        } else if (fullMarkdownText.length > 200) {
+            // 만약 표식을 못 찾으면 텍스트의 후반부를 소설문으로 간주
+            novelPart = fullMarkdownText.substring(Math.floor(fullMarkdownText.length / 2));
+        }
+        
+        let lines = extractEnglishLines(novelPart);
+        let textToRead = lines.join('. ');
+        
+        if (!textToRead) {
+            textToRead = "No English novel passage found.";
+        }
+        
+        var utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.85;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+    } else {
+        alert('이 브라우저는 음성 출력을 지원하지 않습니다.');
+    }
+}
+        function stopSpeech() {{
         if ('speechSynthesis' in window) {{
             window.speechSynthesis.cancel();
         }}
