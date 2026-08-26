@@ -195,6 +195,7 @@ if st.session_state.result_text:
 
 
 # 2️⃣ [새로운 다운로드 버튼 코드] - 지금 바로 기기로 다운로드할 수 있게 실행되는 코드
+# 1. 파일 이름과 내용 준비
 try:
   target_word = st.session_state.current_word
 except:
@@ -206,46 +207,57 @@ note_content = (
     + st.session_state.get("result_text", "")
 )
 
-st.download_button(
-    label="📥 이 노트를 기기에 다운로드하기",
-    data=note_content,
-    file_name=file_name,
-    mime="text/markdown",
-)
-# 사이드바에 저장된 노트 목록 보기
+# 2. 버튼을 좌우로 나란히 배치 (기기 다운로드 + 클라우드 저장)
+col1, col2 = st.columns(2)
+
+with col1:
+  st.download_button(
+      label="📥 기기에 다운로드",
+      data=note_content,
+      file_name=file_name,
+      mime="text/markdown",
+  )
+
+with col2:
+  if st.button("☁️ 클라우드에 저장"):
+    if not os.path.exists(SAVE_DIR):
+      os.makedirs(SAVE_DIR)
+    file_path = os.path.join(SAVE_DIR, file_name)
+    with open(file_path, "w", encoding="utf-8") as f:
+      f.write(f"# 영단어 학습 노트: {target_word}\n\n")
+      f.write(st.session_state.get("result_text", ""))
+    st.success("클라우드 저장 완료!")
+
+# 3. 사이드바에 저장된 노트 목록 및 인쇄 기능 보기
 st.sidebar.markdown("---")
-st.sidebar.subheader("📂 저장된 노트 보관함")
-st.sidebar.write(f"폴더 위치:\n`Desktop/English_Notes`")
+st.sidebar.subheader("📁 저장된 노트 보관함")
+st.sidebar.write(f"폴더 위치:\n`{SAVE_DIR}`")
 
 if os.path.exists(SAVE_DIR):
-    saved_files = os.listdir(SAVE_DIR)
-    if saved_files:
-        st.sidebar.write(f"총 저장된 파일: {len(saved_files)}개")
-        selected_file = st.sidebar.selectbox("파일 선택하여 보기", saved_files)
-        if selected_file:
-            with open(os.path.join(SAVE_DIR, selected_file), "r", encoding="utf-8") as f:
-                content = f.read()
-            st.sidebar.markdown("---")
-            st.sidebar.markdown(content)
-if selected_file:
-          with open(
-              os.path.join(SAVE_DIR, selected_file), "r", encoding="utf-8"
-          ) as f:
-            content = f.read()
-          st.sidebar.markdown("---")
-          st.sidebar.markdown(content)
+  saved_files = os.listdir(SAVE_DIR)
+  if saved_files:
+    st.sidebar.write(f"총 저장된 파일: {len(saved_files)}개")
+    selected_file = st.sidebar.selectbox("파일 선택하여 보기", saved_files)
 
-          # 🖨️ [추가할 인쇄 버튼 코드]
-          print_html = f"""
-            <div style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto;">
-                <h3 style="color: #333;">📖 학습 노트: {selected_file}</h3>
-                <hr style="border: 1px solid #ddd; margin-bottom: 20px;">
-                <div style="white-space: pre-wrap; font-size: 16px; color: #111;">{content}</div>
-            </div>
-            <script>
-                window.print();
-            </script>
-            """
+    if selected_file:
+      with open(
+          os.path.join(SAVE_DIR, selected_file), "r", encoding="utf-8"
+      ) as f:
+        content = f.read()
+      st.sidebar.markdown("---")
+      st.sidebar.markdown(content)
 
-          if st.sidebar.button("🖨️ 이 노트 프린트하기"):
-            components.html(print_html, height=400)
+      # 🖨️ 사이드바 인쇄 버튼
+      print_html = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto;">
+            <h3 style="color: #333;">📖 학습 노트: {selected_file}</h3>
+            <hr style="border: 1px solid #ddd; margin-bottom: 20px;">
+            <div style="white-space: pre-wrap; font-size: 16px; color: #111;">{content}</div>
+        </div>
+        <script>
+            window.print();
+        </script>
+        """
+
+      if st.sidebar.button("🖨️ 이 노트 프린트하기"):
+        components.html(print_html, height=400)
