@@ -59,7 +59,7 @@ if st.button("📰 회화 자료 생성하기") and (news_input or url_input):
         try:
             # --- 수정된 부분: 3.6 버전처럼 안정적인 모델 이름으로 복구 ---
             model = genai.GenerativeModel(
-                model_name="gemini-2.0-flash", # 1.5-flash가 v1beta에서 404 에러나서 2.0-flash로 변경 (기존 3.6 호환)
+                model_name="gemini-3.6-flash", # 1.5-flash가 v1beta에서 404 에러나서 2.0-flash로 변경 (기존 3.6 호환)
                 system_instruction=f"You are an expert English conversation coach for Korean learners in London, ON. Level: {level}. Provide 1. Summary EN+KO, 2. Key Expressions 5, 3. Role-Play Dialogue A:B with EN+KO.",
                 generation_config={"response_mime_type": "text/plain"}
             )
