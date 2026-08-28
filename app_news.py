@@ -130,7 +130,6 @@ if os.path.exists(SAVE_DIR):
                 c = f.read()
             st.sidebar.markdown(c[:2000])
 
-            # 이 노트 프린트 하기 버튼
             print_html = f"""
             <button onclick="printNote()" style="width:100%; background-color:#607D8B; color:white; padding:8px; border:none; border-radius:5px; cursor:pointer;">🖨️ 이 노트 프린트 하기</button>
             <div id="print-content" style="display:none;">{c.replace(chr(10), '<br>')}</div>
@@ -145,6 +144,7 @@ if os.path.exists(SAVE_DIR):
             }}
             </script>
             """
-            st.sidebar.components.v1.html(print_html, height=50)
+            with st.sidebar:
+                components.html(print_html, height=80)
     else:
         st.sidebar.caption("저장된 노트가 없습니다.")
