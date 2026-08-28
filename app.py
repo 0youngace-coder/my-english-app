@@ -1,4 +1,5 @@
 import os
+import json
 import streamlit as st
 import google.generativeai as genai
 import streamlit.components.v1 as components
@@ -11,7 +12,7 @@ try:
     api_key = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
 except Exception as e:
-    st.error("⚠️ API 키 설정이 필요합니다. Streamlit Cloud의 Secrets 설정에 GEMINI_API_KEY를 등록해 주세요.")
+    st.error("⚠ API 키 설정이 필요합니다. Streamlit Cloud의 Secrets 설정에 GEMINI_API_KEY를 등록해 주세요.")
 
 # 저장할 특정 폴더 지정 (바탕화면의 English_Notes 폴더)
 desktop_path = os.path.join(os.path.expanduser("~"), "OneDrive", "Documents", "Desktop")
@@ -39,7 +40,7 @@ if st.button("생성하기") and word_input:
             # Gemini 3.6 모델 적용 및 대화 형식 유도 프롬프트
             model = genai.GenerativeModel(
                 model_name="gemini-3.6-flash",
-                system_instruction="""You are an expert English teacher and writer. 
+                system_instruction="""You are an expert English teacher and writer.
                 When given an English word, provide the output strictly in this format with clear headings:
                 1. Meaning in Korean
                 2. Dialogue (Provide a natural dialogue between native speakers using the word, using ONLY 'A:' and 'B:' for speakers, including English lines and Korean translations)
@@ -47,10 +48,10 @@ if st.button("생성하기") and word_input:
                 Return the response in clean Markdown format.""",
                 generation_config={"response_mime_type": "text/plain"}
             )
-            
+
             prompt = f"Word: {word_input}"
             response = model.generate_content(prompt)
-            
+
             st.session_state.result_text = response.text
             st.session_state.current_word = word_input.strip()
 
@@ -61,14 +62,13 @@ if st.button("생성하기") and word_input:
 if st.session_state.result_text:
     st.markdown(f"## ✨ {st.session_state.current_word}")
     st.markdown(st.session_state.result_text)
-    
+
     st.markdown("---")
-    
-    # 원문 전체 텍스트를 자바스크립트로 안전하게 전달하기 위한 처리
-    raw_text = st.session_state.result_text.replace('`', '').replace('"', '\\"').replace("'", "\\'")
-    
-    # 🔊 음성 재생 버튼 생성 (모바일 잘림 방지를 위해 height를 넉넉하게 160으로 설정)
-    tts_html = """
+
+    # 🔊 음성 재생 버튼 생성 (수정된 부분 - 원본 구조 유지)
+    safe_text_json = json.dumps(st.session_state.result_text)
+
+    tts_html = f"""
     <div style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
         <button onclick="speakDialogueToneShift()" style="background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold;">
             👥 대화문 입체 톤으로 듣기
@@ -77,22 +77,22 @@ if st.session_state.result_text:
             📖 영어 소설문만 듣기
         </button>
         <button onclick="stopSpeech()" style="background-color: #f44336; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold;">
-            ⏹️ 중지
+            ⏹ 중지
         </button>
     </div>
 
     <script>
-    const fullMarkdownText = `{raw_text}`;
+    const fullMarkdownText = {safe_text_json};
 
     function extractEnglishLines(textSection) {{
         let lines = textSection.split('\\n');
         let englishLines = [];
-        
+
         for (let line of lines) {{
             let hasKorean = /[가-힣]/.test(line);
             let hasEnglish = /[a-zA-Z]/.test(line);
-            
-            if (hasEnglish && !hasKorean) {{
+
+            if (hasEnglish &&!hasKorean) {{
                 let cleaned = line.replace(/^[#*\\-\\d\\.\\s]+/, '').replace(/^[A-Za-z]\\s*:/, '').trim();
                 if (cleaned.length > 0) {{
                     englishLines.push(cleaned);
@@ -105,39 +105,39 @@ if st.session_state.result_text:
     function speakDialogueToneShift() {{
         if ('speechSynthesis' in window) {{
             window.speechSynthesis.cancel();
-            
+
             let dialoguePart = fullMarkdownText;
             let dIndex = fullMarkdownText.indexOf('2.');
             let nIndex = fullMarkdownText.indexOf('3.');
-            
-            if (dIndex !== -1 && nIndex !== -1) {{
+
+            if (dIndex!== -1 && nIndex!== -1) {{
                 dialoguePart = fullMarkdownText.substring(dIndex, nIndex);
-            }} else if (dIndex !== -1) {{
+            }} else if (dIndex!== -1) {{
                 dialoguePart = fullMarkdownText.substring(dIndex);
             }}
-            
+
             let lines = extractEnglishLines(dialoguePart);
             if (lines.length === 0) return;
 
             let index = 0;
             function speakNextLine() {{
                 if (index >= lines.length) return;
-                
+
                 let utterance = new SpeechSynthesisUtterance(lines[index]);
                 utterance.lang = 'en-US';
                 utterance.rate = 0.9;
-                
+
                 if (index % 2 === 0) {{
                     utterance.pitch = 1.2;
                 }} else {{
                     utterance.pitch = 0.8;
                 }}
-                
+
                 utterance.onend = function() {{
                     index++;
                     speakNextLine();
                 }};
-                
+
                 window.speechSynthesis.speak(utterance);
             }}
 
@@ -148,43 +148,41 @@ if st.session_state.result_text:
         }}
     }}
 
-function speakNovel() {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        
-        let novelPart = "";
-        let nIndex = fullMarkdownText.indexOf('3.');
-        
-        // 만약 '3.'을 찾지 못했다면 숫자 '3'이라도 찾아서 시도
-        if (nIndex === -1) {
-            nIndex = fullMarkdownText.indexOf('3');
-        }
-        
-        if (nIndex !== -1) {
-            novelPart = fullMarkdownText.substring(nIndex);
-        } else {
-            // 표식을 전혀 못 찾으면 텍스트 전체를 대상으로 추출 시도
-            novelPart = fullMarkdownText;
-        }
-        
-        let lines = extractEnglishLines(novelPart);
-        let textToRead = lines.join('. ');
-        
-        // 텍스트가 없으면 아예 실행하지 않음 (쓸데없는 음성 출력 방지)
-        if (!textToRead || textToRead.trim().length < 2) {
-            return;
-        }
-        
-        var utterance = new SpeechSynthesisUtterance(textToRead);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.85;
-        utterance.pitch = 1.0;
-        window.speechSynthesis.speak(utterance);
-    } else {
-        alert('이 브라우저는 음성 출력을 지원하지 않습니다.');
-    }
-}
-        function stopSpeech() {{
+    function speakNovel() {{
+        if ('speechSynthesis' in window) {{
+            window.speechSynthesis.cancel();
+
+            let novelPart = "";
+            let nIndex = fullMarkdownText.indexOf('3.');
+
+            if (nIndex === -1) {{
+                nIndex = fullMarkdownText.indexOf('3');
+            }}
+
+            if (nIndex!== -1) {{
+                novelPart = fullMarkdownText.substring(nIndex);
+            }} else {{
+                novelPart = fullMarkdownText;
+            }}
+
+            let lines = extractEnglishLines(novelPart);
+            let textToRead = lines.join('. ');
+
+            if (!textToRead || textToRead.trim().length < 2) {{
+                return;
+            }}
+
+            var utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }} else {{
+            alert('이 브라우저는 음성 출력을 지원하지 않습니다.');
+        }}
+    }}
+
+    function stopSpeech() {{
         if ('speechSynthesis' in window) {{
             window.speechSynthesis.cancel();
         }}
@@ -193,19 +191,18 @@ function speakNovel() {
     """
     components.html(tts_html, height=160)
 
-# 1️⃣ [기존 코드 주석 처리] - 실행되지 않고 보관만 해둡니다 (나중에 쓰실 때 #만 지우면 다시 살아납니다)
+# 1⃣ [기존 코드 주석 처리] - 실행되지 않고 보관만 해둡니다 (나중에 쓰실 때 #만 지우면 다시 살아납니다)
 # target_word = st.session_state.current_word
 # file_name = f"{target_word.lower()}_note.md"
 # file_path = os.path.join(SAVE_DIR, file_name)
 #
 # with open(file_path, "w", encoding="utf-8") as f:
-#     f.write(f"# 영단어 학습 노트: {target_word}\n\n")
-#     f.write(st.session_state.result_text)
+# f.write(f"# 영단어 학습 노트: {target_word}\n\n")
+# f.write(st.session_state.result_text)
 #
 # st.success(f"💾 저장이 완료되었습니다!\n- 저장 폴더: `{SAVE_DIR}`\n- 파일명: `{file_name}`")
 
-
-# 2️⃣ [새로운 다운로드 버튼 코드] - 지금 바로 기기로 다운로드할 수 있게 실행되는 코드
+# 2⃣ [새로운 다운로드 버튼 코드] - 지금 바로 기기로 다운로드할 수 있게 실행되는 코드
 # 1. 파일 이름과 내용 준비
 try:
   target_word = st.session_state.current_word
@@ -230,7 +227,7 @@ with col1:
   )
 
 with col2:
-  if st.button("☁️ 클라우드에 저장"):
+  if st.button("☁ 클라우드에 저장"):
     if not os.path.exists(SAVE_DIR):
       os.makedirs(SAVE_DIR)
     file_path = os.path.join(SAVE_DIR, file_name)
@@ -258,7 +255,7 @@ if os.path.exists(SAVE_DIR):
       st.sidebar.markdown("---")
       st.sidebar.markdown(content)
 
-      # 🖨️ 사이드바 인쇄 버튼
+      # 🖨 사이드바 인쇄 버튼
       print_html = f"""
         <div style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto;">
             <h3 style="color: #333;">📖 학습 노트: {selected_file}</h3>
@@ -270,5 +267,5 @@ if os.path.exists(SAVE_DIR):
         </script>
         """
 
-      if st.sidebar.button("🖨️ 이 노트 프린트하기"):
+      if st.sidebar.button("🖨 이 노트 프린트하기"):
         components.html(print_html, height=400)
