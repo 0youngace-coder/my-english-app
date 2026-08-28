@@ -19,20 +19,30 @@ SAVE_DIR = os.path.join(desktop_path, "English_News_Notes")
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 st.title("🗞️ 뉴스로 배우는 영어 회화 앱")
-st.write("뉴스 키워드로 요약, 핵심표현, 토론 대화문을 만들고 입체 톤으로 들어보세요.")
+st.caption("London, Ontario 지역 뉴스 + 세계 뉴스로 매일 영어 토론 연습")
 
-# 1. 오늘의 뉴스 (RSS) - 단순하게 BBC 5개만
+# 1. 뉴스 소스 - London Free Press + BBC
 st.subheader("1. 오늘의 뉴스로 바로 학습 (선택)")
 news_titles = []
 try:
     import feedparser
-    feed = feedparser.parse("http://feeds.bbci.co.uk/news/world/rss.xml")
-    news_titles = [e.title for e in feed.entries[:5]]
+    # 런던 지역 뉴스
+    local_feed = feedparser.parse("https://www.lfpress.com/feed/")
+    # 세계 뉴스
+    world_feed = feedparser.parse("http://feeds.bbci.co.uk/news/world/rss.xml")
+
+    local_titles = [f" [London, ON] {e.title}" for e in local_feed.entries[:3]]
+    world_titles = [f" [World] {e.title}" for e in world_feed.entries[:3]]
+
+    news_titles = local_titles + world_titles
+
     if news_titles:
         selected_news = st.selectbox("헤드라인을 선택하면 아래 입력창에 자동 입력됩니다", ["선택 안함"] + news_titles)
         if selected_news!= "선택 안함":
-            st.session_state['auto_keyword'] = selected_news
-except:
+            # [London, ON] 태그 제거하고 순수 제목만 입력창으로
+            clean_title = selected_news.replace(" [London, ON] ", "").replace(" [World] ", "")
+            st.session_state['auto_keyword'] = clean_title
+except Exception as e:
     st.caption("RSS를 불러올 수 없으면 키워드를 직접 입력하세요.")
 
 # 2. 입력
@@ -41,9 +51,9 @@ with col_level:
     level = st.selectbox("레벨", ["초급 - Slow & Simple", "중급 - Natural", "고급 - Debate / Discussion"], index=1)
 with col_input:
     default_val = st.session_state.get('auto_keyword', '')
-    news_input = st.text_input("뉴스 키워드 또는 기사 URL 입력 (예: Tesla robotaxi)", value=default_val)
+    news_input = st.text_input("뉴스 키워드 또는 기사 URL 입력", value=default_val, placeholder="예: London downtown construction, Tesla robotaxi")
 
-url_input = st.text_input("선택: 뉴스 기사 URL 붙여넣기 (있으면 더 정확함)", "")
+url_input = st.text_input("선택: 뉴스 기사 원문 URL (있으면 더 정확함)", placeholder="https://lfpress.com/...")
 
 if "news_result" not in st.session_state:
     st.session_state.news_result = ""
@@ -54,8 +64,8 @@ if st.button("📰 회화 자료 생성하기") and (news_input or url_input):
     with st.spinner("AI가 뉴스 기반 회화 자료를 만들고 있습니다..."):
         try:
             model = genai.GenerativeModel(
-                model_name="gemini-3.6-flash",
-                system_instruction=f"""You are an expert English conversation coach for Korean learners.
+                model_name="gemini-1.5-flash",
+                system_instruction=f"""You are an expert English conversation coach for Korean learners living in London, Ontario, Canada.
                 Level: {level}
                 Task: Given a news keyword or article, provide in this EXACT format:
 
@@ -63,8 +73,8 @@ if st.button("📰 회화 자료 생성하기") and (news_input or url_input):
                 2. Key Expressions for Conversation (5 expressions from the news, with English example + Korean meaning)
                 3. Role-Play Dialogue / Discussion (Natural A:B dialogue DEBATING or discussing this news, ONLY use 'A:' and 'B:', include English lines and Korean translations)
 
-                Rules: Clean Markdown. Keep English simple if level is 초급, natural if 중급, advanced debate style if 고급.
-                Return in Korean + English mixed as before.""",
+                If the news is about London, Ontario, make the dialogue relatable to local life.
+                Return in Korean + English mixed.""",
                 generation_config={"response_mime_type": "text/plain"}
             )
             prompt = f"News Keyword: {news_input}\nArticle URL content hint: {url_input}\nLevel: {level}"
@@ -132,11 +142,3 @@ if st.session_state.news_result:
 st.sidebar.markdown("---")
 st.sidebar.subheader("📁 저장된 뉴스 노트")
 st.sidebar.write(f"`{SAVE_DIR}`")
-if os.path.exists(SAVE_DIR):
-    files = os.listdir(SAVE_DIR)
-    if files:
-        sel = st.sidebar.selectbox("파일 선택", files)
-        if sel and not sel.endswith('.docx'):
-            with open(os.path.join(SAVE_DIR, sel), "r", encoding="utf-8") as f:
-                c = f.read()
-            st.sidebar.markdown(c)
